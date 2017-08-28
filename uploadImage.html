@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+  <title>BASE64上传图片</title>
+</head>
+<body>
+  <input type="file" value="上传图片" id="upload-image" multiple accept="image/*">
+  <div id="images-container">
+    
+  </div>
+</body>
+<script>
+  let input = document.querySelector('#upload-image');
+  let array = [];
+  input.onchange = function() {
+    let files = this.files;
+    readFiles(files, 0, files.length, sendImages)
+  }
+
+  function sendImages() {
+    $.ajax({
+      url: 'http://127.0.0.1:3010/images',
+      data: {
+        images: array
+      },
+      dataType: 'json',
+      crossDomain: true,
+      method: 'POST',
+      // contentType: 'multipart/form-data',
+      success: function(data) {
+        // alert('成功')
+        showImages(data.images)
+      },
+      error: function(error) {
+        console.log(error)
+      }
+    });
+  }
+
+  function showImages(images) {
+    var imageContainer = document.querySelector('#images-container');
+    for (var i = 0; i < images.length; i++) {
+      var img = document.createElement('img');
+      img.src = images[i];
+      imageContainer.appendChild(img)
+    }
+  }
+
+  function geGuid() {
+    function s4() {
+      return Math.floor((1 + Math.random()) * 0x10000)
+        .toString(16)
+        .substring(1);
+    }
+    return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+      s4() + '-' + s4() + s4() + s4();
+  }
+
+  function readFiles(files, i, length, cb) {
+    if (i === length) {
+      cb();
+      return;
+    }
+    let file = files[i];
+    let reader = new FileReader();
+    let nameArray = file.name.split('.');
+    let suffix = nameArray[nameArray.length -1 ]
+    let guid = geGuid();
+    console.log(reader)
+    reader.onload = function() {
+      let result = this.result;
+      array.push({
+        path: guid + '.' + suffix,
+        content: this.result.split('base64,')[1]
+      })
+      readFiles(files, ++i, length, cb);
+    }
+    reader.onerror = function() {
+      alert('上传错误，请稍后再试!');
+    }
+    reader.readAsDataURL(file);
+  }
+
+  
+</script>
+</html>
